@@ -1138,8 +1138,10 @@ mod tests {
             types::{Changes, PendingChanges},
             CryptoStoreWrapper, MemoryStore, Store,
         },
-        types::events::room::encrypted::{EncryptedEvent, RoomEncryptedEventContent},
-        types::events::to_device::encrypted::EncryptedToDeviceEvent,
+        types::events::{
+            room::encrypted::{EncryptedEvent, RoomEncryptedEventContent},
+            to_device::encrypted::EncryptedToDeviceEvent,
+        },
         verification::VerificationMachine,
     };
 
@@ -1364,6 +1366,7 @@ mod tests {
             event_id: event_id!("$143273582443PhrSn:example.org").to_owned(),
             content,
             origin_server_ts: ruma::MilliSecondsSinceUnixEpoch::now(),
+            state_key: None,
             unsigned: Default::default(),
             other: Default::default(),
         }
