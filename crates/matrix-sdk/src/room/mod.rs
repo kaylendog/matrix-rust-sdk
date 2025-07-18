@@ -575,6 +575,8 @@ impl Room {
         event: Raw<AnyTimelineEvent>,
         push_ctx: Option<&PushContext>,
     ) -> TimelineEvent {
+        print!("{:?}", event);
+
         #[cfg(feature = "e2e-encryption")]
         if let Ok(AnySyncTimelineEvent::MessageLike(AnySyncMessageLikeEvent::RoomEncrypted(
             SyncMessageLikeEvent::Original(_),
