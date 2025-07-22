@@ -19,11 +19,11 @@ use std::{fmt::Display, sync::Arc};
 
 use chrono::{Datelike, Local, TimeZone};
 use ruma::MilliSecondsSinceUnixEpoch;
-use tracing::{error, event_enabled, instrument, trace, warn, Level};
+use tracing::{Level, error, event_enabled, instrument, trace, warn};
 
 use super::{
-    controller::{ObservableItemsTransaction, TimelineMetadata},
     DateDividerMode, TimelineItem, TimelineItemKind, VirtualTimelineItem,
+    controller::{ObservableItemsTransaction, TimelineMetadata},
 };
 
 #[derive(Debug, PartialEq)]
@@ -511,11 +511,7 @@ impl DateDividerAdjuster {
             }
         }
 
-        if report.errors.is_empty() {
-            None
-        } else {
-            Some(report)
-        }
+        if report.errors.is_empty() { None } else { Some(report) }
     }
 
     /// Returns whether the two dates for the given timestamps are the same or
@@ -661,15 +657,18 @@ enum DateDividerInsertError {
 #[cfg(test)]
 mod tests {
     use assert_matches2::assert_let;
-    use ruma::{owned_event_id, owned_user_id, uint, MilliSecondsSinceUnixEpoch};
+    use ruma::{
+        MilliSecondsSinceUnixEpoch, owned_event_id, owned_user_id,
+        room_version_rules::RoomVersionRules, uint,
+    };
 
     use super::{super::controller::ObservableItems, DateDividerAdjuster};
     use crate::timeline::{
+        DateDividerMode, EventTimelineItem, MsgLikeContent, TimelineItemContent,
+        VirtualTimelineItem,
         controller::TimelineMetadata,
         date_dividers::timestamp_to_date,
         event_item::{EventTimelineItemKind, RemoteEventTimelineItem},
-        DateDividerMode, EventTimelineItem, MsgLikeContent, TimelineItemContent,
-        VirtualTimelineItem,
     };
 
     fn event_with_ts(timestamp: MilliSecondsSinceUnixEpoch) -> EventTimelineItem {
@@ -695,7 +694,7 @@ mod tests {
     }
 
     fn test_metadata() -> TimelineMetadata {
-        TimelineMetadata::new(owned_user_id!("@a:b.c"), ruma::RoomVersionId::V11, None, None, false)
+        TimelineMetadata::new(owned_user_id!("@a:b.c"), RoomVersionRules::V11, None, None, false)
     }
 
     #[test]

@@ -6,8 +6,28 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased] - ReleaseDate
 
+### Features
+
+- Add `Account::fetch_account_data_static` to fetch account data from the server
+  with a statically-known type, with a signature similar to
+  `Account::account_data`.
+  ([#5424](https://github.com/matrix-org/matrix-rust-sdk/pull/5424))
+- Add support to accept historic room key bundles that arrive out of order, i.e.
+  the bundle arrives after the invite has already been accepted.
+  ([#5322](https://github.com/matrix-org/matrix-rust-sdk/pull/5322))
+
+- [**breaking**] `OAuth::login` now allows requesting additional scopes for the authorization code grant.
+  ([#5395](https://github.com/matrix-org/matrix-rust-sdk/pull/5395))
+
 ### Refactor
 
+- [**breaking**] The `reason` argument of `Room::report_room()` is now required,
+  due to a clarification in the spec.
+  ([#5337](https://github.com/matrix-org/matrix-rust-sdk/pull/5337))
+- [**breaking**] The `join_rule` field of `RoomPreview` is now a
+  `JoinRuleSummary`. It has the same variants as `SpaceRoomJoinRule` but
+  contains as summary of the allow rules for the restricted variants.
+  ([#5337](https://github.com/matrix-org/matrix-rust-sdk/pull/5337))
 - ([#5409](https://github.com/matrix-org/matrix-rust-sdk/pull/5409)) Update imports to `matrix-sdk-crypto`.
 
 ## [0.13.0] - 2025-07-10

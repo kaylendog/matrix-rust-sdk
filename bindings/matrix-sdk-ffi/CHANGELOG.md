@@ -6,8 +6,29 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased] - ReleaseDate
 
+### Features:
+
+- Add `HomeserverLoginDetails::supports_sso_login` for legacy SSO support information.
+  This is primarily for Element X to give a dedicated error message in case
+  it connects a homeserver with only this method available.
+  ([#5222](https://github.com/matrix-org/matrix-rust-sdk/pull/5222))
+
 ### Breaking changes:
 
+- The `reason` argument of `Room::report_room` is now required, do to a clarification in the spec.
+  ([#5337](https://github.com/matrix-org/matrix-rust-sdk/pull/5337))
+- `PublicRoomJoinRule` has more variants, supporting all the known values from the spec.
+  ([#5337](https://github.com/matrix-org/matrix-rust-sdk/pull/5337))
+- The fields of `MediaPreviewConfig` are both optional, allowing to use the type for room account
+  data as well as global account data.
+  ([#5337](https://github.com/matrix-org/matrix-rust-sdk/pull/5337))
+- The `event_id` field of `PredecessorRoom` was removed, due to its removal in the Matrix
+  specification with MSC4291.
+  ([#5419](https://github.com/matrix-org/matrix-rust-sdk/pull/5419))
+- `Client::url_for_oidc` now allows requesting additional scopes for the OAuth2 authorization code grant.
+  ([#5395](https://github.com/matrix-org/matrix-rust-sdk/pull/5395))
+- `Client::url_for_oidc` now allows passing an optional existing device id from a previous login call.
+  ([#5394](https://github.com/matrix-org/matrix-rust-sdk/pull/5394))
 - `ClientBuilder::build_with_qr_code` has been removed. Instead, the Client should be built by passing
   `QrCodeData::server_name` to `ClientBuilder::server_name_or_homeserver_url`, after which QR login can be performed by
   calling `Client::login_with_qr_code`. ([#5388](https://github.com/matrix-org/matrix-rust-sdk/pull/5388))

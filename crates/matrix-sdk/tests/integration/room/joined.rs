@@ -951,8 +951,7 @@ async fn test_call_notifications_dont_notify_room_with_an_existing_call() {
         ))
         .sender(user_id!("@alice:example.org"))
         .state_key("_@alice:example.org_a-device-id")
-        .into_raw_sync()
-        .cast();
+        .into_raw();
 
     sync_builder.add_joined_room(
         JoinedRoomBuilder::default()
@@ -1047,12 +1046,8 @@ async fn test_subscribe_to_knock_requests() {
 
     let user_id = user_id!("@alice:b.c");
     let knock_event_id = event_id!("$alice-knock:b.c");
-    let knock_event = f
-        .member(user_id)
-        .membership(MembershipState::Knock)
-        .event_id(knock_event_id)
-        .into_raw_timeline()
-        .cast();
+    let knock_event =
+        f.member(user_id).membership(MembershipState::Knock).event_id(knock_event_id).into_raw();
 
     server.mock_get_members().ok(vec![knock_event]).mock_once().mount().await;
 
@@ -1080,11 +1075,8 @@ async fn test_subscribe_to_knock_requests() {
     assert!(seen_knock.is_seen);
 
     // If we then receive a new member event for Alice that's not 'knock'
-    let joined_room_builder = JoinedRoomBuilder::new(room_id).add_state_bulk(vec![f
-        .member(user_id)
-        .membership(MembershipState::Invite)
-        .into_raw_timeline()
-        .cast()]);
+    let joined_room_builder = JoinedRoomBuilder::new(room_id)
+        .add_state_bulk(vec![f.member(user_id).membership(MembershipState::Invite).into_raw()]);
     server.sync_room(&client, joined_room_builder).await;
 
     // The knock requests are now empty because we have new member events
@@ -1120,8 +1112,7 @@ async fn test_subscribe_to_knock_requests_reloads_members_on_limited_sync() {
     let f = EventFactory::new().room(room_id);
 
     let user_id = user_id!("@alice:b.c");
-    let knock_event =
-        f.member(user_id).membership(MembershipState::Knock).into_raw_timeline().cast();
+    let knock_event = f.member(user_id).membership(MembershipState::Knock).into_raw();
 
     server
         .mock_get_members()
@@ -1167,12 +1158,8 @@ async fn test_remove_outdated_seen_knock_requests_ids_when_membership_changed() 
 
     let user_id = user_id!("@alice:b.c");
     let knock_event_id = event_id!("$alice-knock:b.c");
-    let knock_event = f
-        .member(user_id)
-        .membership(MembershipState::Knock)
-        .event_id(knock_event_id)
-        .into_raw_timeline()
-        .cast();
+    let knock_event =
+        f.member(user_id).membership(MembershipState::Knock).event_id(knock_event_id).into_raw();
 
     // When syncing the room, we'll have a knock request coming from alice
     let room = server
@@ -1188,8 +1175,7 @@ async fn test_remove_outdated_seen_knock_requests_ids_when_membership_changed() 
 
     // If we then load the members again and the previously knocking member is in
     // another state now
-    let joined_event =
-        f.member(user_id).membership(MembershipState::Join).into_raw_timeline().cast();
+    let joined_event = f.member(user_id).membership(MembershipState::Join).into_raw();
 
     server.mock_get_members().ok(vec![joined_event]).mock_once().mount().await;
 
@@ -1217,12 +1203,8 @@ async fn test_remove_outdated_seen_knock_requests_ids_when_we_have_an_outdated_k
 
     let user_id = user_id!("@alice:b.c");
     let knock_event_id = event_id!("$alice-knock:b.c");
-    let knock_event = f
-        .member(user_id)
-        .membership(MembershipState::Knock)
-        .event_id(knock_event_id)
-        .into_raw_timeline()
-        .cast();
+    let knock_event =
+        f.member(user_id).membership(MembershipState::Knock).event_id(knock_event_id).into_raw();
 
     // When syncing the room, we'll have a knock request coming from alice
     let room = server
@@ -1242,8 +1224,7 @@ async fn test_remove_outdated_seen_knock_requests_ids_when_we_have_an_outdated_k
         .member(user_id)
         .membership(MembershipState::Knock)
         .event_id(event_id!("$knock-2:b.c"))
-        .into_raw_timeline()
-        .cast();
+        .into_raw();
 
     server.mock_get_members().ok(vec![knock_event]).mock_once().mount().await;
 
@@ -1271,12 +1252,8 @@ async fn test_subscribe_to_knock_requests_clears_seen_ids_on_member_reload() {
 
     let user_id = user_id!("@alice:b.c");
     let knock_event_id = event_id!("$alice-knock:b.c");
-    let knock_event = f
-        .member(user_id)
-        .membership(MembershipState::Knock)
-        .event_id(knock_event_id)
-        .into_raw_timeline()
-        .cast();
+    let knock_event =
+        f.member(user_id).membership(MembershipState::Knock).event_id(knock_event_id).into_raw();
 
     server.mock_get_members().ok(vec![knock_event]).mock_once().mount().await;
 
@@ -1305,8 +1282,7 @@ async fn test_subscribe_to_knock_requests_clears_seen_ids_on_member_reload() {
 
     // If we then load the members again and the previously knocking member is in
     // another state now
-    let joined_event =
-        f.member(user_id).membership(MembershipState::Join).into_raw_timeline().cast();
+    let joined_event = f.member(user_id).membership(MembershipState::Join).into_raw();
 
     server.mock_get_members().ok(vec![joined_event]).mock_once().mount().await;
 
@@ -1352,8 +1328,7 @@ async fn test_room_member_updates_sender_on_full_member_reload() {
         .room(room_id)
         .member(user_id)
         .membership(MembershipState::Join)
-        .into_raw_timeline()
-        .cast();
+        .into_raw();
     server.mock_get_members().ok(vec![joined_event]).mock_once().mount().await;
     room.sync_members().await.expect("could not reload room members");
 
@@ -1379,8 +1354,7 @@ async fn test_room_member_updates_sender_on_partial_members_update() {
         .room(room_id)
         .member(user_id)
         .membership(MembershipState::Join)
-        .into_raw_sync()
-        .cast();
+        .into_raw();
     server
         .sync_room(&client, JoinedRoomBuilder::new(room_id).add_state_bulk(vec![joined_event]))
         .await;
@@ -1412,5 +1386,5 @@ async fn test_report_room() {
     let _response = client.sync_once(sync_settings).await.unwrap();
     let room = client.get_room(&DEFAULT_TEST_ROOM_ID).unwrap();
 
-    room.report_room(Some(reason.to_owned())).await.unwrap();
+    room.report_room(reason.to_owned()).await.unwrap();
 }

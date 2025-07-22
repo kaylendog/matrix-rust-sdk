@@ -23,31 +23,31 @@ use imbl::Vector;
 #[cfg(test)]
 use matrix_sdk::crypto::OlmMachine;
 use matrix_sdk::{
+    Result, Room,
     deserialized_responses::TimelineEvent,
     event_cache::{RoomEventCache, RoomPaginationStatus},
     paginators::{PaginationResult, Paginator},
     send_queue::{
         LocalEcho, LocalEchoContent, RoomSendQueueUpdate, SendHandle, SendReactionHandle,
     },
-    Result, Room,
 };
 use ruma::{
+    EventId, MilliSecondsSinceUnixEpoch, OwnedEventId, OwnedTransactionId, TransactionId, UserId,
     api::client::receipt::create_receipt::v3::ReceiptType as SendReceiptType,
     events::{
+        AnyMessageLikeEventContent, AnySyncEphemeralRoomEvent, AnySyncMessageLikeEvent,
+        AnySyncTimelineEvent, MessageLikeEventType,
         poll::unstable_start::UnstablePollStartEventContent,
         reaction::ReactionEventContent,
         receipt::{Receipt, ReceiptThread, ReceiptType},
         relation::Annotation,
         room::message::{MessageType, Relation},
-        AnyMessageLikeEventContent, AnySyncEphemeralRoomEvent, AnySyncMessageLikeEvent,
-        AnySyncTimelineEvent, MessageLikeEventType,
     },
+    room_version_rules::RoomVersionRules,
     serde::Raw,
-    EventId, MilliSecondsSinceUnixEpoch, OwnedEventId, OwnedTransactionId, RoomVersionId,
-    TransactionId, UserId,
 };
 #[cfg(test)]
-use ruma::{events::receipt::ReceiptEventContent, OwnedRoomId, RoomId};
+use ruma::{OwnedRoomId, RoomId, events::receipt::ReceiptEventContent};
 use tokio::sync::{RwLock, RwLockWriteGuard};
 use tracing::{debug, error, field::debug, info, instrument, trace, warn};
 
@@ -61,22 +61,22 @@ pub(super) use self::{
     state_transaction::TimelineStateTransaction,
 };
 use super::{
+    DateDividerMode, EmbeddedEvent, Error, EventSendState, EventTimelineItem, InReplyToDetails,
+    PaginationError, Profile, TimelineDetails, TimelineEventItemId, TimelineFocus, TimelineItem,
+    TimelineItemContent, TimelineItemKind, VirtualTimelineItem,
     algorithms::{rfind_event_by_id, rfind_event_item},
     event_item::{ReactionStatus, RemoteEventOrigin},
     item::TimelineUniqueId,
     subscriber::TimelineSubscriber,
     traits::{Decryptor, RoomDataProvider},
-    DateDividerMode, EmbeddedEvent, Error, EventSendState, EventTimelineItem, InReplyToDetails,
-    PaginationError, Profile, TimelineDetails, TimelineEventItemId, TimelineFocus, TimelineItem,
-    TimelineItemContent, TimelineItemKind, VirtualTimelineItem,
 };
 use crate::{
     timeline::{
+        MsgLikeContent, MsgLikeKind, TimelineEventFilterFn,
         algorithms::rfind_event_by_item_id,
         date_dividers::DateDividerAdjuster,
         event_item::TimelineItemHandle,
         pinned_events_loader::{PinnedEventsLoader, PinnedEventsLoaderError},
-        MsgLikeContent, MsgLikeKind, TimelineEventFilterFn,
     },
     unable_to_decrypt_hook::UtdHookManager,
 };
@@ -90,7 +90,7 @@ mod state;
 mod state_transaction;
 
 pub(super) use aggregations::*;
-pub(super) use decryption_retry_task::{spawn_crypto_tasks, CryptoDropHandles};
+pub(super) use decryption_retry_task::{CryptoDropHandles, spawn_crypto_tasks};
 
 /// Data associated to the current timeline focus.
 ///
@@ -218,10 +218,10 @@ impl Default for TimelineSettings {
 /// If you have a custom filter, it may be best to chain yours with this one if
 /// you do not want to run into situations where a read receipt is not visible
 /// because it's living on an event that doesn't have a matching timeline item.
-pub fn default_event_filter(event: &AnySyncTimelineEvent, room_version: &RoomVersionId) -> bool {
+pub fn default_event_filter(event: &AnySyncTimelineEvent, rules: &RoomVersionRules) -> bool {
     match event {
         AnySyncTimelineEvent::MessageLike(AnySyncMessageLikeEvent::RoomRedaction(ev)) => {
-            if ev.redacts(room_version).is_some() {
+            if ev.redacts(&rules.redaction).is_some() {
                 // This is a redaction of an existing message, we'll only update the previous
                 // message and not render a new entry.
                 false
@@ -328,7 +328,7 @@ impl<P: RoomDataProvider, D: Decryptor> TimelineController<P, D> {
         let state = Arc::new(RwLock::new(TimelineState::new(
             focus.clone(),
             room_data_provider.own_user_id().to_owned(),
-            room_data_provider.room_version(),
+            room_data_provider.room_version_rules(),
             internal_id_prefix,
             unable_to_decrypt_hook,
             is_room_encrypted,
@@ -953,7 +953,7 @@ impl<P: RoomDataProvider, D: Decryptor> TimelineController<P, D> {
                     txn_id.to_owned(),
                     new_event_id.to_owned(),
                     &mut txn.items,
-                    &txn.meta.room_version,
+                    &txn.meta.room_version_rules,
                 ) {
                     trace!("Aggregation marked as sent");
                     txn.commit();
@@ -1240,7 +1240,9 @@ impl<P: RoomDataProvider, D: Decryptor> TimelineController<P, D> {
     }
 
     /// Subscribe to changes in the read receipts of our own user.
-    pub async fn subscribe_own_user_read_receipts_changed(&self) -> impl Stream<Item = ()> {
+    pub async fn subscribe_own_user_read_receipts_changed(
+        &self,
+    ) -> impl Stream<Item = ()> + use<P, D> {
         self.state.read().await.meta.read_receipts.subscribe_own_user_read_receipts_changed()
     }
 
@@ -1310,7 +1312,7 @@ impl<P: RoomDataProvider, D: Decryptor> TimelineController<P, D> {
             &mut tr.items,
             &target,
             aggregation,
-            &tr.meta.room_version,
+            &tr.meta.room_version_rules,
         );
 
         tr.commit();

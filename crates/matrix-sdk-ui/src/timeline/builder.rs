@@ -14,14 +14,14 @@
 
 use std::sync::Arc;
 
-use matrix_sdk::{executor::spawn, Room};
+use matrix_sdk::{Room, executor::spawn};
 use matrix_sdk_base::{SendOutsideWasm, SyncOutsideWasm};
-use ruma::{events::AnySyncTimelineEvent, RoomVersionId};
-use tracing::{info_span, Instrument, Span};
+use ruma::{events::AnySyncTimelineEvent, room_version_rules::RoomVersionRules};
+use tracing::{Instrument, Span, info_span};
 
 use super::{
-    controller::{TimelineController, TimelineSettings},
     DateDividerMode, Error, Timeline, TimelineDropHandle, TimelineFocus,
+    controller::{TimelineController, TimelineSettings},
 };
 use crate::{
     timeline::{
@@ -129,7 +129,7 @@ impl TimelineBuilder {
     ///   they couldn't be decrypted when the appropriate room key arrives).
     pub fn event_filter<F>(mut self, filter: F) -> Self
     where
-        F: Fn(&AnySyncTimelineEvent, &RoomVersionId) -> bool
+        F: Fn(&AnySyncTimelineEvent, &RoomVersionRules) -> bool
             + SendOutsideWasm
             + SyncOutsideWasm
             + 'static,

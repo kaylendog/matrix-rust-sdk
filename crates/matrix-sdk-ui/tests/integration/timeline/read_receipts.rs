@@ -23,25 +23,28 @@ use matrix_sdk::{
     test_utils::mocks::{MatrixMockServer, RoomMessagesResponseTemplate},
 };
 use matrix_sdk_test::{
-    async_test, event_factory::EventFactory, JoinedRoomBuilder, RoomAccountDataTestEvent, ALICE,
-    BOB, CAROL,
+    ALICE, BOB, CAROL, JoinedRoomBuilder, RoomAccountDataTestEvent, async_test,
+    event_factory::EventFactory,
 };
 use matrix_sdk_ui::timeline::{RoomExt, TimelineFocus};
 use ruma::{
+    MilliSecondsSinceUnixEpoch,
     api::client::receipt::create_receipt::v3::ReceiptType as CreateReceiptType,
     event_id,
     events::{
+        AnySyncMessageLikeEvent, AnySyncTimelineEvent, RoomAccountDataEventType,
         receipt::{ReceiptThread, ReceiptType as EventReceiptType},
         room::message::{MessageType, RoomMessageEventContent, SyncRoomMessageEvent},
-        AnySyncMessageLikeEvent, AnySyncTimelineEvent, RoomAccountDataEventType,
     },
-    owned_event_id, room_id, uint, user_id, MilliSecondsSinceUnixEpoch, RoomVersionId,
+    owned_event_id, room_id,
+    room_version_rules::RoomVersionRules,
+    uint, user_id,
 };
 use serde_json::json;
 use stream_assert::{assert_pending, assert_ready};
 use tokio::task::yield_now;
 
-fn filter_notice(ev: &AnySyncTimelineEvent, _room_version: &RoomVersionId) -> bool {
+fn filter_notice(ev: &AnySyncTimelineEvent, _rules: &RoomVersionRules) -> bool {
     match ev {
         AnySyncTimelineEvent::MessageLike(AnySyncMessageLikeEvent::RoomMessage(
             SyncRoomMessageEvent::Original(msg),
