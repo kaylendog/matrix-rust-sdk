@@ -51,7 +51,10 @@ insta = { version = "1.42.1", features = ["json", "redactions"] }
 itertools = "0.14.0"
 js-sys = "0.3.69"
 mime = "0.3.17"
-oauth2 = { version = "5.0.0", default-features = false, features = ["reqwest", "timing-resistant-secret-traits"] }
+oauth2 = { version = "5.0.0", default-features = false, features = [
+    "reqwest",
+    "timing-resistant-secret-traits",
+] }
 once_cell = "1.20.2"
 pbkdf2 = { version = "0.12.2" }
 pin-project-lite = "0.2.16"
@@ -59,7 +62,7 @@ proptest = { version = "1.6.0", default-features = false, features = ["std"] }
 rand = "0.8.5"
 reqwest = { version = "0.12.12", default-features = false }
 rmp-serde = "1.3.0"
-ruma = { git = "https://github.com/ruma/ruma", rev = "7bae3d0c0b8edf008899ac2b04cf9722182eef68", features = [
+ruma = { git = "https://github.com/kaylendog/ruma", rev = "fbec9980bc9dfa585f65422c064beea1b8e28d8c", features = [
     "client-api-c",
     "compat-upload-signatures",
     "compat-arbitrary-length-ids",
@@ -68,6 +71,7 @@ ruma = { git = "https://github.com/ruma/ruma", rev = "7bae3d0c0b8edf008899ac2b04
     "compat-lax-room-create-deser",
     "compat-lax-room-topic-deser",
     "unstable-msc3401",
+    "unstable-msc3414",
     "unstable-msc3488",
     "unstable-msc3489",
     "unstable-msc4075",
@@ -77,7 +81,7 @@ ruma = { git = "https://github.com/ruma/ruma", rev = "7bae3d0c0b8edf008899ac2b04
     "unstable-msc4278",
     "unstable-msc4286",
 ] }
-ruma-common = { git = "https://github.com/ruma/ruma", rev = "7bae3d0c0b8edf008899ac2b04cf9722182eef68" }
+ruma-common = { git = "https://github.com/kaylendog/ruma", rev = "fbec9980bc9dfa585f65422c064beea1b8e28d8c" }
 sentry = "0.36.0"
 sentry-tracing = "0.36.0"
 serde = { version = "1.0.217", features = ["rc"] }
@@ -121,7 +125,7 @@ matrix-sdk-ui = { path = "crates/matrix-sdk-ui", version = "0.13.0", default-fea
 rust_2018_idioms = "warn"
 semicolon_in_expressions_from_macros = "warn"
 unexpected_cfgs = { level = "warn", check-cfg = [
-    'cfg(tarpaulin_include)', # Used by tarpaulin (code coverage)
+    'cfg(tarpaulin_include)',              # Used by tarpaulin (code coverage)
     'cfg(ruma_unstable_exhaustive_types)', # Used by Ruma's EventContent derive macro
 ] }
 unused_extern_crates = "warn"
