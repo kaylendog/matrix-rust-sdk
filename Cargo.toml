@@ -155,7 +155,7 @@ unused_async = "warn"
 # selected with `--debug`
 [profile.dev]
 # Saves a lot of disk space. If symbols are needed, use the dbg profile.
-debug = 0
+debug = 2
 
 [profile.dev.package]
 # Optimize quote even in debug mode. Speeds up proc-macros enough to account

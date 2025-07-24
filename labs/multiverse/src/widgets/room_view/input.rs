@@ -16,6 +16,7 @@ struct Cli {
 pub enum Command {
     Invite { user_id: String },
     Leave,
+    Rename { to: String },
 }
 
 pub enum MessageOrCommand {
