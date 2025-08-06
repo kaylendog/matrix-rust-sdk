@@ -1916,6 +1916,36 @@ impl Room {
     /// ```
     #[instrument(skip_all)]
     pub async fn enable_encryption(&self) -> Result<()> {
+        self.enable_encryption_inner(
+            #[cfg(feature = "experimental-encrypted-state-events")]
+            false,
+        )
+        .await
+    }
+
+    /// Enable End-to-end encryption in this room, with experimental encrypted
+    /// state events.
+    ///
+    /// This method will be a noop if encryption is already enabled, otherwise
+    /// sends a `m.room.encryption` state event to the room. This might fail if
+    /// you don't have the appropriate power level to enable end-to-end
+    /// encryption.
+    ///
+    /// A sync needs to be received to update the local room state. This method
+    /// will wait for a sync to be received, this might time out if no
+    /// sync loop is running or if the server is slow.
+    #[cfg(feature = "experimental-encrypted-state-events")]
+    #[instrument(skip_all)]
+    pub async fn enable_encryption_with_state(&self) -> Result<()> {
+        self.enable_encryption_inner(true).await
+    }
+
+    /// Helper function for enabling encryption, optionally with support for
+    /// encrypted state events.
+    async fn enable_encryption_inner(
+        &self,
+        #[cfg(feature = "experimental-encrypted-state-events")] state_events: bool,
+    ) -> Result<()> {
         use ruma::{
             events::room::encryption::RoomEncryptionEventContent, EventEncryptionAlgorithm,
         };
@@ -1924,6 +1954,10 @@ impl Room {
         if !self.latest_encryption_state().await?.is_encrypted() {
             let content =
                 RoomEncryptionEventContent::new(EventEncryptionAlgorithm::MegolmV1AesSha2);
+
+            #[cfg(feature = "experimental-encrypted-state-events")]
+            let content = if state_events { content.with_encrypted_state() } else { content };
+
             self.send_state_event(content).await?;
 
             // TODO do we want to return an error here if we time out? This
