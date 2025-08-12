@@ -19,6 +19,7 @@ rustdoc-args = ["--generate-link-to-definition"]
 [features]
 js = ["wasm-bindgen-futures"]
 uniffi = ["dep:uniffi"]
+experimental-encrypted-state-events = []
 # Private feature, see
 # https://github.com/matrix-org/matrix-rust-sdk/pull/3749#issuecomment-2312939823 for the gory
 # details.
