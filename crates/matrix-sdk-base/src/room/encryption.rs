@@ -36,6 +36,11 @@ pub enum EncryptionState {
     /// The room is encrypted.
     Encrypted,
 
+    /// The room is encrypted, additionally requiring state events to be
+    /// encrypted.
+    #[cfg(feature = "experimental-encrypted-state-events")]
+    StateEncrypted,
+
     /// The room is not encrypted.
     NotEncrypted,
 
@@ -46,8 +51,23 @@ pub enum EncryptionState {
 
 impl EncryptionState {
     /// Check whether `EncryptionState` is [`Encrypted`][Self::Encrypted].
+    #[cfg(not(feature = "experimental-encrypted-state-events"))]
     pub fn is_encrypted(&self) -> bool {
         matches!(self, Self::Encrypted)
+    }
+
+    /// Check whether `EncryptionState` is [`Encrypted`][Self::Encrypted] or
+    /// [`StateEncrypted`][Self::StateEncrypted].
+    #[cfg(feature = "experimental-encrypted-state-events")]
+    pub fn is_encrypted(&self) -> bool {
+        matches!(self, Self::Encrypted | Self::StateEncrypted)
+    }
+
+    /// Check whether `EncryptionState` is
+    /// [`StateEncrypted`][Self::StateEncrypted].
+    #[cfg(feature = "experimental-encrypted-state-events")]
+    pub fn is_state_encrypted(&self) -> bool {
+        matches!(self, Self::StateEncrypted)
     }
 
     /// Check whether `EncryptionState` is [`Unknown`][Self::Unknown].
