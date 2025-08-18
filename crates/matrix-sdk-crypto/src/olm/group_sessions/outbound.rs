@@ -468,7 +468,7 @@ impl OutboundGroupSession {
     /// # Arguments
     ///
     /// * `payload` - The plaintext content of the event that should be
-    ///   encrypted in raw JSON form.
+    ///   serialized to JSON and encrypted.
     ///
     /// # Panics
     ///
@@ -578,7 +578,7 @@ impl OutboundGroupSession {
         }
 
         let payload = Payload { event_type, state_key, content, room_id: &self.room_id };
-        self.encrypt_inner(&payload, None).await.cast_unchecked()
+        self.encrypt_inner(&payload, None).await
     }
 
     fn elapsed(&self) -> bool {
