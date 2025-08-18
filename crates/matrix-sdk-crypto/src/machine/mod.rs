@@ -34,7 +34,7 @@ use matrix_sdk_common::{
     BoxFuture,
 };
 #[cfg(feature = "experimental-encrypted-state-events")]
-use ruma::events::{AnyStateEvent, AnyStateEventContent, StateEventContent};
+use ruma::events::{AnyStateEventContent, StateEventContent};
 use ruma::{
     api::client::{
         dehydrated_device::DehydratedDeviceData,
@@ -2278,7 +2278,7 @@ impl OlmMachine {
     ///
     /// # Errors
     ///
-    /// Returns an error if
+    /// Returns an error if any of the following are true:
     ///
     /// * The original event's state key failed to unpack;
     /// * The decrypted event could not be deserialised;
@@ -2287,11 +2287,13 @@ impl OlmMachine {
     /// * The unpacked event state key does not match the state key of the
     ///   decrypted event.
     #[cfg(feature = "experimental-encrypted-state-events")]
-    pub fn verify_packed_state_key(
+    fn verify_packed_state_key(
         &self,
         original: &EncryptedEvent,
         decrypted: &Raw<AnyTimelineEvent>,
     ) -> MegolmResult<()> {
+        use serde::Deserialize;
+
         // We only need to verify state events.
         let Some(raw_state_key) = &original.state_key else { return Ok(()) };
 
@@ -2299,21 +2301,29 @@ impl OlmMachine {
         let (outer_event_type, outer_state_key) =
             raw_state_key.split_once(":").ok_or(MegolmError::StateKeyVerificationFailed)?;
 
+        // Helper for deserializing.
+        #[derive(Deserialize)]
+        struct PayloadDeserializationHelper {
+            state_key: String,
+            #[serde(rename = "type")]
+            event_type: String,
+        }
+
         // Deserialize the decrypted event.
-        let AnyTimelineEvent::State(inner) =
-            decrypted.deserialize().map_err(MegolmError::JsonError)?
-        else {
-            return Err(MegolmError::StateKeyVerificationFailed);
-        };
+        let PayloadDeserializationHelper {
+            state_key: inner_state_key,
+            event_type: inner_event_type,
+        } = decrypted
+            .deserialize_as_unchecked()
+            .map_err(|_| MegolmError::StateKeyVerificationFailed)?;
 
         // Check event types match, discard if not.
-        let inner_event_type = inner.event_type().to_string();
         if outer_event_type != inner_event_type {
             return Err(MegolmError::StateKeyVerificationFailed);
         }
 
         // Check state keys match, discard if not.
-        if outer_state_key != inner.state_key() {
+        if outer_state_key != inner_state_key {
             return Err(MegolmError::StateKeyVerificationFailed);
         }
         Ok(())
