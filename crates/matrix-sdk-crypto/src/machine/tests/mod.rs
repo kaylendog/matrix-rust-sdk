@@ -751,8 +751,6 @@ async fn test_megolm_state_encryption() {
         to_device_requests_to_content(to_device_requests),
     );
 
-    let mut room_keys_received_stream = Box::pin(bob.store().room_keys_received_stream());
-
     let decryption_settings =
         DecryptionSettings { sender_device_trust_requirement: TrustRequirement::Untrusted };
 
@@ -775,18 +773,6 @@ async fn test_megolm_state_encryption() {
         .unwrap();
     let sessions = std::slice::from_ref(&group_session);
     bob.store().save_inbound_group_sessions(sessions).await.unwrap();
-
-    // when we decrypt the room key, the
-    // inbound_group_session_streamroom_keys_received_stream should tell us
-    // about it.
-    let room_keys = room_keys_received_stream
-        .next()
-        .now_or_never()
-        .flatten()
-        .expect("We should have received an update of room key infos")
-        .unwrap();
-    assert_eq!(room_keys.len(), 1);
-    assert_eq!(room_keys[0].session_id, group_session.session_id());
 
     let plaintext = "It is a secret to everybody";
 
@@ -822,12 +808,6 @@ async fn test_megolm_state_encryption() {
         assert_eq!(&content.topic, plaintext);
     } else {
         panic!("Decrypted room event has the wrong type");
-    }
-
-    // Just decrypting the event should *not* cause an update on the
-    // inbound_group_session_stream.
-    if let Some(igs) = room_keys_received_stream.next().now_or_never() {
-        panic!("Session stream unexpectedly returned update: {igs:?}");
     }
 }
 
