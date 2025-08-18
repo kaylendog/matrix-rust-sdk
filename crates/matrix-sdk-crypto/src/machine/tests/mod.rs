@@ -737,6 +737,8 @@ async fn test_megolm_encryption() {
 async fn test_megolm_state_encryption() {
     use ruma::events::{AnyStateEvent, EmptyStateKey};
 
+    use crate::types::events::room::{encrypted::RoomEncryptedEventContent, Event};
+
     let (alice, bob) =
         get_machine_pair_with_setup_sessions_test_helper(alice_id(), user_id(), false).await;
     let room_id = room_id!("!test:example.org");
@@ -790,14 +792,61 @@ async fn test_megolm_state_encryption() {
         "content": encrypted_content,
     });
 
+    // Malformed events
+    let bad_type_event = json!({
+        "event_id": "$xxxxx:example.org",
+        "origin_server_ts": MilliSecondsSinceUnixEpoch::now(),
+        "sender": alice.user_id(),
+        "type": "m.room.encrypted",
+        "state_key": "m.room.malformed:",
+        "content": encrypted_content,
+    });
+    let bad_state_key_event = json!({
+        "event_id": "$xxxxx:example.org",
+        "origin_server_ts": MilliSecondsSinceUnixEpoch::now(),
+        "sender": alice.user_id(),
+        "type": "m.room.encrypted",
+        "state_key": "m.room.malformed:",
+        "content": encrypted_content,
+    });
+
     let event = json_convert(&event).unwrap();
+
+    let bad_type_event: Raw<Event<RoomEncryptedEventContent>> =
+        json_convert(&bad_type_event).unwrap();
+    let bad_state_key_event = json_convert(&bad_state_key_event).unwrap();
 
     let decryption_settings =
         DecryptionSettings { sender_device_trust_requirement: TrustRequirement::Untrusted };
 
     let decryption_result =
         bob.try_decrypt_room_event(&event, room_id, &decryption_settings).await.unwrap();
+
+    let bad_type_decryption_result =
+        bob.try_decrypt_room_event(&bad_type_event, room_id, &decryption_settings).await.unwrap();
+    let bad_state_key_decryption_result = bob
+        .try_decrypt_room_event(&bad_state_key_event, room_id, &decryption_settings)
+        .await
+        .unwrap();
+
     assert_let!(RoomEventDecryptionResult::Decrypted(decrypted_event) = decryption_result);
+
+    // Require malformed events fail verification
+    assert_matches!(
+        bad_type_decryption_result,
+        RoomEventDecryptionResult::UnableToDecrypt(UnableToDecryptInfo {
+            reason: UnableToDecryptReason::StateKeyVerificationFailed,
+            ..
+        })
+    );
+    assert_matches!(
+        bad_state_key_decryption_result,
+        RoomEventDecryptionResult::UnableToDecrypt(UnableToDecryptInfo {
+            reason: UnableToDecryptReason::StateKeyVerificationFailed,
+            ..
+        })
+    );
+
     let decrypted_event = decrypted_event.event.deserialize().unwrap();
 
     if let AnyTimelineEvent::State(AnyStateEvent::RoomTopic(StateEvent::Original(
